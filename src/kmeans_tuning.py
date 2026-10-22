@@ -56,6 +56,34 @@ for k in range(2, 16):
     })
 
 results_df = pd.DataFrame(results)
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(9, 5))
+
+plt.plot(
+    results_df["K"],
+    results_df["Silhouette Score"],
+    marker="o",
+    label="Silhouette Score"
+)
+
+plt.plot(
+    results_df["K"],
+    results_df["ARI"],
+    marker="s",
+    label="Adjusted Rand Index"
+)
+
+plt.xlabel("Number of Clusters (K)")
+plt.ylabel("Score")
+plt.title("K-Means Cluster Count Tuning")
+plt.xticks(results_df["K"])
+plt.grid(True, alpha=0.3)
+plt.legend()
+plt.tight_layout()
+
+plt.savefig("results/kmeans_tuning.png", dpi=300)
+plt.show()
 
 print("\n--- K-Means Cluster Count Comparison ---")
 print(results_df.to_string(index=False))
