@@ -78,6 +78,16 @@ clusters = kmeans.fit_predict(X_scaled)
 silhouette = silhouette_score(X_scaled, clusters)
 ari = adjusted_rand_score(labels, clusters)
 
+from experiment_logger import save_result
+
+save_result(
+    experiment="Pretrained ResNet18",
+    features=X.shape[1],
+    clusters=len(set(clusters)),
+    silhouette=silhouette,
+    ari=ari
+)
+
 print("\n--- CNN Feature Clustering Results ---")
 print("Images clustered:", len(clusters))
 print("Number of clusters:", len(set(clusters)))
