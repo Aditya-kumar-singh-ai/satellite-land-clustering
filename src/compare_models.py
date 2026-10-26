@@ -1,4 +1,5 @@
 
+
 import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
@@ -8,62 +9,65 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 RESULTS_DIR = PROJECT_ROOT / "results"
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
-# Results collected from completed experiments
-results = [
-    {
-        "Experiment": "PCA + K-Means",
-        "Features": 50,
-        "Clusters (K)": 10,
-        "Silhouette Score": 0.1699,
-        "ARI": 0.1221,
-        "Preprocessing": "Pixel values / 255 + PCA"
-    },
-    {
-        "Experiment": "Mean RGB + Std RGB",
-        "Features": 6,
-        "Clusters (K)": 10,
-        "Silhouette Score": 0.3414,
-        "ARI": 0.1672,
-        "Preprocessing": "Colour statistics / 255"
-    },
-    {
-        "Experiment": "Scaled Colour Features",
-        "Features": 6,
-        "Clusters (K)": 10,
-        "Silhouette Score": 0.3310,
-        "ARI": 0.1861,
-        "Preprocessing": "StandardScaler"
-    },
-    {
-        "Experiment": "RGB Histogram",
-        "Features": 24,
-        "Clusters (K)": 10,
-        "Silhouette Score": 0.3198,
-        "ARI": 0.1138,
-        "Preprocessing": "Normalized 8-bin RGB histograms"
-    },
-    {
-        "Experiment": "Pretrained ResNet18",
-        "Features": 512,
-        "Clusters (K)": 10,
-        "Silhouette Score": 0.0645,
-        "ARI": 0.4293,
-        "Preprocessing": "ResNet18 pretrained transforms + StandardScaler"
-    }
+# Load actual experiment results
+input_path = RESULTS_DIR / "experiment_results.csv"
+
+if not input_path.exists():
+    raise FileNotFoundError(
+        "Experiment results not found. Run the experiments first."
+    )
+
+all_results = pd.read_csv(input_path)
+
+# Select the five main experiments at K=10
+main_experiments = [
+    "PCA + K-Means",
+    "Mean RGB + Std RGB",
+    "Scaled Colour Features",
+    "RGB Histogram",
+    "Pretrained ResNet18"
 ]
 
-df = pd.DataFrame(results)
+df = all_results[
+    all_results["Experiment"].isin(main_experiments)
+].copy()
+
+# Keep the latest result for each main experiment
+df = df.drop_duplicates(
+    subset=["Experiment"],
+    keep="last"
+)
+
+# Add preprocessing descriptions for the report
+preprocessing = {
+    "PCA + K-Means": "Pixel values / 255 + PCA",
+    "Mean RGB + Std RGB": "Colour statistics / 255",
+    "Scaled Colour Features": "StandardScaler",
+    "RGB Histogram": "Normalized 8-bin RGB histograms",
+    "Pretrained ResNet18": "ResNet18 transforms + StandardScaler"
+}
+
+df["Preprocessing"] = df["Experiment"].map(preprocessing)
+
+# Rename the cluster column for the report
+df = df.rename(columns={"Clusters": "Clusters (K)"})
 
 # Display the comparison table
 print("\n--- Model Comparison ---")
+
+if df.empty:
+    print("No main experiment results found.")
+    print("Check experiment names in experiment_results.csv.")
+    raise SystemExit(1)
+
 print(df.to_string(index=False))
 
-# Save the table
+# Save the comparison table
 csv_path = RESULTS_DIR / "model_comparison.csv"
 df.to_csv(csv_path, index=False)
 print(f"\nCSV saved to: {csv_path}")
 
-# Plot the two metrics separately because their scales differ
+# Plot the metrics separately because their scales differ
 fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
 axes[0].bar(df["Experiment"], df["Silhouette Score"])

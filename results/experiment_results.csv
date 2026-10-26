@@ -1,3 +1,20 @@
 Experiment,Features,Clusters,Silhouette Score,ARI
-Logger Test,6,10,0.331,0.1861
 Pretrained ResNet18,512,10,0.0645,0.4293
+Mean RGB + Std RGB,6,10,0.3414,0.1672
+Scaled Colour Features,6,10,0.331,0.1861
+RGB Histogram,24,10,0.3198,0.1138
+Colour Feature Tuning K=2,6,2,0.478,0.0643
+Colour Feature Tuning K=3,6,3,0.3898,0.1163
+Colour Feature Tuning K=4,6,4,0.358,0.1241
+Colour Feature Tuning K=5,6,5,0.3439,0.1343
+Colour Feature Tuning K=6,6,6,0.3419,0.1511
+Colour Feature Tuning K=7,6,7,0.3484,0.1503
+Colour Feature Tuning K=8,6,8,0.3462,0.1694
+Colour Feature Tuning K=9,6,9,0.3405,0.1591
+Colour Feature Tuning K=10,6,10,0.331,0.1861
+Colour Feature Tuning K=11,6,11,0.3301,0.1868
+Colour Feature Tuning K=12,6,12,0.3325,0.1838
+Colour Feature Tuning K=13,6,13,0.3305,0.1835
+Colour Feature Tuning K=14,6,14,0.3083,0.191
+Colour Feature Tuning K=15,6,15,0.3182,0.1927
+PCA + K-Means,50,10,0.1699,0.1221

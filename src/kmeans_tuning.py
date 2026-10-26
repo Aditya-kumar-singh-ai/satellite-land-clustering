@@ -6,6 +6,7 @@ from datasets import load_dataset
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import silhouette_score, adjusted_rand_score
+from experiment_logger import save_result
 
 print("Loading EuroSAT dataset...")
 
@@ -48,6 +49,14 @@ for k in range(2, 16):
 
     silhouette = silhouette_score(X_scaled, clusters)
     ari = adjusted_rand_score(labels, clusters)
+
+    save_result(
+        experiment=f"Colour Feature Tuning K={k}",
+        features=X_scaled.shape[1],
+        clusters=k,
+        silhouette=silhouette,
+        ari=ari
+    )
 
     results.append({
         "K": k,

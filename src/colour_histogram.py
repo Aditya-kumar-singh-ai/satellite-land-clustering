@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from datasets import load_dataset
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score, adjusted_rand_score
+from experiment_logger import save_result
 
 print("Loading EuroSAT dataset...")
 
@@ -58,6 +59,14 @@ clusters = model.fit_predict(X)
 # Evaluation
 silhouette = silhouette_score(X, clusters)
 ari = adjusted_rand_score(labels, clusters)
+# Save experiment results
+save_result(
+    experiment="RGB Histogram",
+    features=X.shape[1],
+    clusters=len(set(clusters)),
+    silhouette=silhouette,
+    ari=ari
+)
 
 print("\n--- RGB Histogram Results ---")
 print("Images clustered:", len(clusters))

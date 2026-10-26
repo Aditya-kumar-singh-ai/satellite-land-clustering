@@ -7,6 +7,7 @@ from datasets import load_dataset
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import silhouette_score, adjusted_rand_score
+from experiment_logger import save_result
 
 print("Loading EuroSAT dataset...")
 
@@ -55,6 +56,15 @@ clusters = model.fit_predict(X_scaled)
 # Evaluate
 silhouette = silhouette_score(X_scaled, clusters)
 ari = adjusted_rand_score(labels, clusters)
+
+# Save experiment results
+save_result(
+    experiment="Scaled Colour Features",
+    features=X_scaled.shape[1],
+    clusters=len(set(clusters)),
+    silhouette=silhouette,
+    ari=ari
+)
 
 print("\n--- Scaled Colour-Feature Results ---")
 print("Images clustered:", len(clusters))
