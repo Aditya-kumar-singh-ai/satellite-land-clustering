@@ -1,8 +1,9 @@
+
 numpy
 pandas
-scikit-learn
 matplotlib
-seaborn
+scikit-learn
+datasets
 Pillow
-rasterio
-jupyter
+torch
+torchvision
