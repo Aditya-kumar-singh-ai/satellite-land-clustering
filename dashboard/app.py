@@ -69,6 +69,7 @@ page = st.sidebar.radio(
     [
         "Overview",
         "Model Comparison",
+        "Algorithm Comparison",
         "Cluster Explorer",
         "Evaluation & Insights",
         "About Project",
@@ -95,6 +96,29 @@ if csv_path.exists():
                 df[column], errors="coerce"
             )
 
+# Load clustering algorithm comparison results
+algorithm_csv_path = (
+    RESULTS_DIR / "clustering_algorithm_comparison.csv"
+)
+
+algorithm_df = pd.DataFrame()
+
+if algorithm_csv_path.exists():
+    algorithm_df = pd.read_csv(algorithm_csv_path)
+
+    numeric_columns = [
+        "Silhouette Score",
+        "ARI",
+        "Number of Clusters",
+        "Noise Points",
+        "Runtime (seconds)",
+    ]
+
+    for column in numeric_columns:
+        if column in algorithm_df.columns:
+            algorithm_df[column] = pd.to_numeric(
+                algorithm_df[column], errors="coerce"
+            )
 # --------------------------------------------------
 # Reusable functions
 # --------------------------------------------------
@@ -247,6 +271,66 @@ elif page == "Model Comparison":
         "model_comparison.png",
         "Previously generated experiment comparison.",
     )
+
+
+# --------------------------------------------------
+# Algorithm Comparison
+# --------------------------------------------------
+elif page == "Algorithm Comparison":
+    st.title("🔬 Clustering Algorithm Comparison")
+
+    st.write(
+        "Compare K-Means, Agglomerative Clustering, "
+        "and DBSCAN using the same image features."
+    )
+
+    if algorithm_df.empty:
+        st.warning(
+            "Results not found. Run "
+            "python src/compare_clustering_algorithms.py"
+        )
+    else:
+        st.subheader("Comparison Results")
+
+        st.dataframe(
+            algorithm_df,
+            hide_index=True,
+            use_container_width=True,
+        )
+
+        valid = algorithm_df.dropna(
+            subset=["Silhouette Score"]
+        )
+
+        if not valid.empty:
+            winner = valid.loc[
+                valid["Silhouette Score"].idxmax()
+            ]
+
+            st.success(
+                f"Provisional winner by Silhouette Score: "
+                f"{winner['Algorithm']} "
+                f"({winner['Silhouette Score']:.4f})"
+            )
+
+        st.subheader("Silhouette Score")
+        st.bar_chart(
+            algorithm_df.set_index("Algorithm")[
+                ["Silhouette Score"]
+            ]
+        )
+
+        st.subheader("Adjusted Rand Index (ARI)")
+        st.bar_chart(
+            algorithm_df.set_index("Algorithm")[["ARI"]]
+        )
+
+        st.caption(
+            "These are initial results. DBSCAN's parameters "
+            "and the evaluation procedure should be reviewed "
+            "before final model selection."
+        )
+
 
 # --------------------------------------------------
 # Cluster Explorer
