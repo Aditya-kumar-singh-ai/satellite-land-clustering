@@ -1,0 +1,501 @@
+Image Index,Actual Land Type,Cluster
+0,Herbaceous Vegetation,6
+1,Industrial Buildings,10
+2,Forest,3
+3,Industrial Buildings,1
+4,Industrial Buildings,8
+5,Industrial Buildings,10
+6,Herbaceous Vegetation,6
+7,Herbaceous Vegetation,6
+8,Residential Buildings,14
+9,Residential Buildings,14
+10,Forest,3
+11,Forest,3
+12,Pasture,4
+13,River,5
+14,Highway,0
+15,Forest,3
+16,Herbaceous Vegetation,6
+17,Pasture,0
+18,Permanent Crop,1
+19,Pasture,0
+20,Residential Buildings,14
+21,Herbaceous Vegetation,6
+22,Forest,3
+23,River,2
+24,Herbaceous Vegetation,5
+25,Herbaceous Vegetation,6
+26,Annual Crop,2
+27,Industrial Buildings,4
+28,Herbaceous Vegetation,0
+29,Forest,3
+30,SeaLake,7
+31,Industrial Buildings,10
+32,River,2
+33,Annual Crop,9
+34,Residential Buildings,10
+35,Permanent Crop,6
+36,Pasture,4
+37,Residential Buildings,14
+38,Annual Crop,9
+39,Herbaceous Vegetation,3
+40,Pasture,0
+41,Residential Buildings,6
+42,Residential Buildings,12
+43,Highway,2
+44,Industrial Buildings,12
+45,Annual Crop,9
+46,Industrial Buildings,12
+47,Residential Buildings,14
+48,Herbaceous Vegetation,5
+49,Residential Buildings,14
+50,Annual Crop,9
+51,Industrial Buildings,10
+52,Industrial Buildings,10
+53,SeaLake,2
+54,Industrial Buildings,10
+55,Industrial Buildings,10
+56,Forest,3
+57,Highway,11
+58,Forest,3
+59,Forest,3
+60,Industrial Buildings,10
+61,Annual Crop,4
+62,River,2
+63,Highway,11
+64,Highway,1
+65,Highway,10
+66,Herbaceous Vegetation,6
+67,Highway,0
+68,River,2
+69,Permanent Crop,0
+70,Highway,4
+71,Permanent Crop,4
+72,Permanent Crop,4
+73,Residential Buildings,14
+74,Pasture,0
+75,Forest,3
+76,Industrial Buildings,10
+77,Permanent Crop,6
+78,Pasture,0
+79,Highway,0
+80,Herbaceous Vegetation,5
+81,Highway,6
+82,Herbaceous Vegetation,6
+83,Forest,3
+84,Pasture,1
+85,Pasture,1
+86,Permanent Crop,4
+87,Residential Buildings,10
+88,Residential Buildings,14
+89,Herbaceous Vegetation,6
+90,Herbaceous Vegetation,6
+91,Highway,0
+92,Annual Crop,9
+93,SeaLake,7
+94,Residential Buildings,14
+95,Annual Crop,9
+96,Highway,1
+97,SeaLake,7
+98,Residential Buildings,14
+99,River,5
+100,Pasture,0
+101,Residential Buildings,10
+102,Forest,3
+103,Annual Crop,4
+104,Forest,3
+105,Annual Crop,4
+106,Permanent Crop,1
+107,SeaLake,7
+108,Annual Crop,9
+109,Forest,3
+110,Highway,11
+111,Residential Buildings,14
+112,Residential Buildings,14
+113,Permanent Crop,4
+114,Herbaceous Vegetation,5
+115,Permanent Crop,5
+116,Permanent Crop,5
+117,Pasture,0
+118,River,2
+119,Annual Crop,9
+120,Industrial Buildings,12
+121,SeaLake,7
+122,Residential Buildings,14
+123,Residential Buildings,1
+124,Industrial Buildings,10
+125,Annual Crop,9
+126,SeaLake,7
+127,Annual Crop,9
+128,Highway,11
+129,Herbaceous Vegetation,6
+130,SeaLake,7
+131,Industrial Buildings,10
+132,Residential Buildings,14
+133,River,2
+134,Pasture,4
+135,Annual Crop,9
+136,Annual Crop,9
+137,SeaLake,3
+138,Highway,11
+139,Industrial Buildings,13
+140,Annual Crop,4
+141,Highway,0
+142,Highway,11
+143,Annual Crop,0
+144,Forest,3
+145,Permanent Crop,1
+146,Residential Buildings,14
+147,Annual Crop,9
+148,Residential Buildings,1
+149,Forest,3
+150,Highway,1
+151,Annual Crop,4
+152,Herbaceous Vegetation,5
+153,Forest,3
+154,River,2
+155,River,2
+156,Permanent Crop,1
+157,SeaLake,7
+158,Residential Buildings,14
+159,Forest,3
+160,Annual Crop,0
+161,Forest,3
+162,SeaLake,2
+163,Annual Crop,9
+164,SeaLake,7
+165,Herbaceous Vegetation,1
+166,Permanent Crop,1
+167,Annual Crop,9
+168,Highway,2
+169,Forest,3
+170,Forest,3
+171,Annual Crop,9
+172,Highway,11
+173,Highway,11
+174,Annual Crop,9
+175,Forest,3
+176,Annual Crop,9
+177,Residential Buildings,14
+178,Industrial Buildings,13
+179,Herbaceous Vegetation,6
+180,Herbaceous Vegetation,6
+181,SeaLake,7
+182,River,2
+183,Annual Crop,9
+184,Permanent Crop,6
+185,Herbaceous Vegetation,6
+186,Forest,3
+187,Forest,3
+188,Industrial Buildings,12
+189,Residential Buildings,1
+190,River,2
+191,Permanent Crop,0
+192,Highway,4
+193,Permanent Crop,1
+194,Herbaceous Vegetation,6
+195,River,2
+196,Pasture,1
+197,Annual Crop,9
+198,Residential Buildings,14
+199,Forest,3
+200,River,0
+201,Pasture,0
+202,Industrial Buildings,10
+203,Herbaceous Vegetation,5
+204,River,11
+205,Highway,11
+206,Herbaceous Vegetation,5
+207,Annual Crop,9
+208,River,2
+209,Residential Buildings,14
+210,Permanent Crop,1
+211,Annual Crop,9
+212,Annual Crop,9
+213,Forest,3
+214,SeaLake,7
+215,Highway,4
+216,SeaLake,7
+217,Permanent Crop,12
+218,SeaLake,7
+219,Industrial Buildings,14
+220,Forest,3
+221,Permanent Crop,4
+222,Highway,11
+223,Permanent Crop,4
+224,Industrial Buildings,10
+225,Residential Buildings,14
+226,River,2
+227,Industrial Buildings,10
+228,Residential Buildings,12
+229,Pasture,0
+230,Industrial Buildings,10
+231,Permanent Crop,6
+232,Forest,3
+233,SeaLake,7
+234,Permanent Crop,0
+235,Herbaceous Vegetation,6
+236,Annual Crop,9
+237,Industrial Buildings,14
+238,Pasture,0
+239,SeaLake,3
+240,Forest,3
+241,Permanent Crop,1
+242,SeaLake,7
+243,Permanent Crop,11
+244,Industrial Buildings,12
+245,River,2
+246,Herbaceous Vegetation,6
+247,Permanent Crop,6
+248,River,0
+249,Herbaceous Vegetation,3
+250,Herbaceous Vegetation,6
+251,Highway,1
+252,Forest,3
+253,Residential Buildings,14
+254,Herbaceous Vegetation,5
+255,Annual Crop,12
+256,Industrial Buildings,10
+257,Herbaceous Vegetation,6
+258,Residential Buildings,14
+259,Industrial Buildings,13
+260,Herbaceous Vegetation,6
+261,Industrial Buildings,10
+262,SeaLake,7
+263,Annual Crop,6
+264,Annual Crop,9
+265,Residential Buildings,14
+266,Pasture,4
+267,Highway,1
+268,Annual Crop,9
+269,SeaLake,7
+270,Pasture,3
+271,SeaLake,2
+272,Permanent Crop,1
+273,Industrial Buildings,10
+274,Herbaceous Vegetation,6
+275,River,5
+276,Pasture,0
+277,Permanent Crop,9
+278,SeaLake,7
+279,Highway,11
+280,Highway,5
+281,SeaLake,7
+282,Residential Buildings,14
+283,River,2
+284,Permanent Crop,6
+285,Pasture,0
+286,Annual Crop,9
+287,Forest,3
+288,River,5
+289,Herbaceous Vegetation,5
+290,Permanent Crop,6
+291,Permanent Crop,1
+292,SeaLake,7
+293,River,2
+294,Highway,1
+295,Forest,3
+296,Permanent Crop,1
+297,Permanent Crop,4
+298,Industrial Buildings,8
+299,Annual Crop,0
+300,Industrial Buildings,10
+301,River,2
+302,Permanent Crop,0
+303,Highway,11
+304,Annual Crop,9
+305,Forest,3
+306,Permanent Crop,12
+307,Annual Crop,9
+308,Highway,0
+309,SeaLake,7
+310,Residential Buildings,14
+311,Highway,0
+312,Forest,3
+313,Residential Buildings,6
+314,Residential Buildings,14
+315,Permanent Crop,6
+316,Industrial Buildings,10
+317,Highway,0
+318,Annual Crop,9
+319,SeaLake,2
+320,Residential Buildings,5
+321,Forest,3
+322,Pasture,0
+323,River,0
+324,Annual Crop,9
+325,River,2
+326,Industrial Buildings,12
+327,Permanent Crop,1
+328,Permanent Crop,0
+329,Forest,3
+330,Industrial Buildings,8
+331,SeaLake,7
+332,Residential Buildings,14
+333,Herbaceous Vegetation,6
+334,Industrial Buildings,10
+335,Industrial Buildings,10
+336,Annual Crop,9
+337,SeaLake,3
+338,Residential Buildings,14
+339,Residential Buildings,14
+340,Annual Crop,9
+341,Annual Crop,9
+342,River,2
+343,Annual Crop,9
+344,Annual Crop,4
+345,Industrial Buildings,10
+346,Herbaceous Vegetation,5
+347,River,11
+348,Pasture,6
+349,Annual Crop,9
+350,SeaLake,7
+351,Pasture,0
+352,Residential Buildings,5
+353,Industrial Buildings,12
+354,Herbaceous Vegetation,5
+355,Herbaceous Vegetation,6
+356,SeaLake,7
+357,Forest,3
+358,Permanent Crop,1
+359,SeaLake,7
+360,Permanent Crop,1
+361,River,0
+362,SeaLake,7
+363,Forest,3
+364,SeaLake,7
+365,Herbaceous Vegetation,6
+366,Herbaceous Vegetation,6
+367,Annual Crop,4
+368,SeaLake,7
+369,Annual Crop,0
+370,SeaLake,5
+371,River,2
+372,River,0
+373,Herbaceous Vegetation,6
+374,Industrial Buildings,10
+375,SeaLake,7
+376,Industrial Buildings,12
+377,Residential Buildings,14
+378,Forest,3
+379,SeaLake,7
+380,Highway,2
+381,Industrial Buildings,10
+382,Highway,6
+383,Herbaceous Vegetation,6
+384,Industrial Buildings,10
+385,Herbaceous Vegetation,6
+386,Pasture,0
+387,Highway,0
+388,River,0
+389,Herbaceous Vegetation,6
+390,SeaLake,7
+391,Herbaceous Vegetation,6
+392,Residential Buildings,1
+393,Forest,3
+394,Industrial Buildings,10
+395,SeaLake,7
+396,Residential Buildings,14
+397,Residential Buildings,10
+398,Forest,3
+399,Herbaceous Vegetation,5
+400,Annual Crop,9
+401,SeaLake,3
+402,Annual Crop,6
+403,Pasture,0
+404,Pasture,0
+405,River,2
+406,Highway,1
+407,Industrial Buildings,10
+408,Residential Buildings,14
+409,Residential Buildings,10
+410,Pasture,3
+411,SeaLake,7
+412,Herbaceous Vegetation,6
+413,Permanent Crop,1
+414,SeaLake,2
+415,Herbaceous Vegetation,5
+416,Industrial Buildings,12
+417,Forest,3
+418,River,5
+419,SeaLake,7
+420,Forest,3
+421,Highway,2
+422,Highway,11
+423,Forest,3
+424,Herbaceous Vegetation,5
+425,Herbaceous Vegetation,6
+426,Herbaceous Vegetation,6
+427,River,5
+428,Permanent Crop,5
+429,Annual Crop,9
+430,Annual Crop,9
+431,Residential Buildings,6
+432,Residential Buildings,14
+433,Herbaceous Vegetation,6
+434,Industrial Buildings,2
+435,Residential Buildings,5
+436,Permanent Crop,1
+437,Herbaceous Vegetation,6
+438,Pasture,0
+439,Herbaceous Vegetation,6
+440,Annual Crop,9
+441,Forest,3
+442,Forest,3
+443,Pasture,0
+444,Residential Buildings,14
+445,Herbaceous Vegetation,5
+446,Herbaceous Vegetation,0
+447,Annual Crop,4
+448,Pasture,0
+449,River,5
+450,Highway,11
+451,Herbaceous Vegetation,6
+452,Permanent Crop,1
+453,Permanent Crop,4
+454,Industrial Buildings,10
+455,Residential Buildings,6
+456,Industrial Buildings,12
+457,Herbaceous Vegetation,6
+458,Highway,1
+459,Herbaceous Vegetation,5
+460,SeaLake,7
+461,Highway,0
+462,Herbaceous Vegetation,5
+463,Residential Buildings,1
+464,SeaLake,7
+465,Residential Buildings,14
+466,Residential Buildings,14
+467,Pasture,3
+468,River,10
+469,Permanent Crop,4
+470,Herbaceous Vegetation,6
+471,SeaLake,3
+472,Pasture,1
+473,Annual Crop,9
+474,River,2
+475,Industrial Buildings,13
+476,SeaLake,7
+477,Pasture,0
+478,Permanent Crop,1
+479,Herbaceous Vegetation,6
+480,Annual Crop,6
+481,Annual Crop,7
+482,SeaLake,3
+483,Annual Crop,9
+484,Industrial Buildings,13
+485,Annual Crop,9
+486,Annual Crop,9
+487,Annual Crop,9
+488,SeaLake,7
+489,Highway,0
+490,Industrial Buildings,10
+491,Permanent Crop,4
+492,Pasture,0
+493,Herbaceous Vegetation,5
+494,Residential Buildings,14
+495,Residential Buildings,5
+496,Residential Buildings,14
+497,Permanent Crop,12
+498,Herbaceous Vegetation,6
+499,SeaLake,7
