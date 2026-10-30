@@ -41,22 +41,44 @@ model = model.to(device)
 # Preprocess images as required by the pretrained model
 preprocess = weights.transforms()
 
+
+from torch.utils.data import DataLoader, TensorDataset
+
+BATCH_SIZE = 32
+
 features = []
 
-print("Extracting CNN features...")
+print("Preparing images for batch processing...")
+
+image_tensors = [
+    preprocess(sample["image"].convert("RGB"))
+    for sample in images
+]
+
+image_tensor = torch.stack(image_tensors)
+loader = DataLoader(
+    TensorDataset(image_tensor),
+    batch_size=BATCH_SIZE,
+    shuffle=False
+)
+
+print("Extracting CNN features in batches...")
 
 with torch.no_grad():
-    for i, sample in enumerate(images):
-        image = sample["image"].convert("RGB")
-        tensor = preprocess(image).unsqueeze(0).to(device)
+    for batch_number, (batch,) in enumerate(loader, start=1):
+        batch = batch.to(device)
+        embeddings = model(batch)
+        features.append(embeddings.cpu().numpy())
 
-        embedding = model(tensor)
-        features.append(embedding.squeeze(0).numpy())
+        processed = min(
+            batch_number * BATCH_SIZE,
+            len(images)
+        )
+        print(f"Processed {processed}/{len(images)} images")
 
-        if (i + 1) % 100 == 0:
-            print(f"Processed {i + 1}/500 images")
+X = np.vstack(features).astype(np.float32)
 
-X = np.array(features, dtype=np.float32)
+print("CNN feature shape:", X.shape)
 
 print("CNN feature shape:", X.shape)
 

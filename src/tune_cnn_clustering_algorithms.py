@@ -3,19 +3,15 @@ from pathlib import Path
 import time
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
-import torch
-import torchvision.models as models
 
-from datasets import load_dataset
 from sklearn.cluster import KMeans, AgglomerativeClustering
 from sklearn.metrics import silhouette_score, adjusted_rand_score
 from sklearn.preprocessing import StandardScaler
-from torchvision.models import ResNet18_Weights
+
+from feature_cache import load_or_extract_features
 
 
-# Configuration
 SEED = 42
 SAMPLE_SIZE = 500
 N_CLUSTERS = 15
@@ -25,41 +21,23 @@ RESULTS_DIR = ROOT_DIR / "results"
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
-# 1. Load the same reproducible sample
-print("Loading EuroSAT RGB dataset...")
-dataset = load_dataset("blanchon/EuroSAT_RGB", split="train")
-images = dataset.shuffle(seed=SEED).select(range(SAMPLE_SIZE))
-y_true = np.asarray(images["label"])
+# Load cached CNN features
+print("Loading CNN features from cache...")
 
-print(f"Images loaded: {len(images)}")
+X, y_true = load_or_extract_features(
+    sample_size=SAMPLE_SIZE,
+    seed=SEED
+)
+
+print("Feature shape:", X.shape)
+print("Images loaded:", len(y_true))
 
 
-# 2. Extract ResNet18 features
-print("Loading pretrained ResNet18...")
-weights = ResNet18_Weights.DEFAULT
-cnn_model = models.resnet18(weights=weights)
-cnn_model.fc = torch.nn.Identity()
-cnn_model.eval()
-
-preprocess = weights.transforms()
-features = []
-
-print("Extracting CNN features...")
-with torch.inference_mode():
-    for i, sample in enumerate(images):
-        image = sample["image"].convert("RGB")
-        tensor = preprocess(image).unsqueeze(0)
-        embedding = cnn_model(tensor)
-        features.append(embedding.squeeze(0).numpy())
-
-        if (i + 1) % 100 == 0:
-            print(f"Processed {i + 1}/{SAMPLE_SIZE}")
-
-X = np.asarray(features, dtype=np.float32)
+# Standardize features
 X_scaled = StandardScaler().fit_transform(X)
 
 
-# 3. Compare clustering algorithms
+# Define algorithms
 algorithms = [
     (
         "K-Means",
@@ -78,10 +56,13 @@ algorithms = [
     )
 ]
 
+
+# Evaluate algorithms
 results = []
 
 for name, algorithm in algorithms:
     print(f"\nRunning {name}...")
+
     start = time.perf_counter()
     cluster_ids = algorithm.fit_predict(X_scaled)
     elapsed = time.perf_counter() - start
@@ -93,7 +74,7 @@ for name, algorithm in algorithms:
         "Algorithm": name,
         "K": N_CLUSTERS,
         "Features": X.shape[1],
-        "Images": len(images),
+        "Images": len(y_true),
         "Silhouette Score": silhouette,
         "ARI": ari,
         "Clustering Seconds": elapsed
@@ -104,19 +85,17 @@ for name, algorithm in algorithms:
     print(f"Clustering time: {elapsed:.3f} seconds")
 
 
-# 4. Save comparison table
+# Save results
 results_df = pd.DataFrame(results)
 
 csv_path = RESULTS_DIR / "cnn_algorithm_comparison.csv"
 results_df.to_csv(csv_path, index=False)
 
-print("\n" + "=" * 60)
-print("CNN FEATURE CLUSTERING ALGORITHM COMPARISON")
-print("=" * 60)
+print("\nCNN FEATURE CLUSTERING ALGORITHM COMPARISON")
 print(results_df.round(4).to_string(index=False))
 
 
-# 5. Plot metrics
+# Plot comparison
 fig, axes = plt.subplots(1, 2, figsize=(10, 5))
 
 axes[0].bar(
