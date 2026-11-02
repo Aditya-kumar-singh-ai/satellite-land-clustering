@@ -1,151 +1,121 @@
 # Satellite Land-Type Clustering
 
-An unsupervised machine learning project exploring satellite image clustering using the EuroSAT RGB dataset. This project compares pixel-based features, colour statistics, RGB histograms, and features extracted using a pretrained ResNet18 convolutional neural network (CNN).
+An unsupervised machine learning project that groups satellite images by visual similarity using CNN feature extraction and K-Means clustering. The project uses the EuroSAT RGB dataset and a pretrained ResNet18 model to extract image features.
 
 ## Project Overview
 
-Satellite images contain patterns related to forests, crops, water bodies, roads, and buildings. This project investigates how different image representations affect clustering quality. K-Means clustering is used without training on the land-use labels; the labels are used only to evaluate the resulting clusters.
+Satellite images contain visual patterns associated with forests, crops, rivers, residential areas, and other land-cover types.
+
+This project explores how pretrained CNN features can help group satellite images into clusters without using land-use labels during model training.
+
+It also includes a batch prediction pipeline and an interactive Streamlit dashboard that allows users to upload new satellite images and receive cluster assignments.
 
 ## Objectives
 
 - Explore and preprocess satellite images.
-- Apply dimensionality reduction using PCA.
-- Compare colour statistics, RGB histograms, and pretrained CNN features.
-- Evaluate clustering with the Silhouette Score and Adjusted Rand Index (ARI).
-- Investigate the effect of changing the number of clusters.
-- Record experiment results and create comparison visualizations.
+- Extract 512-dimensional image features using pretrained ResNet18.
+- Apply K-Means clustering to CNN features.
+- Compare clustering algorithms and different values of K.
+- Evaluate clustering using Adjusted Rand Index (ARI) and Silhouette Score.
+- Examine cluster purity, sampling robustness, and initialization stability.
+- Build a reusable model for batch prediction on new images.
+- Develop an interactive Streamlit dashboard.
 
 ## Dataset
 
-The project uses the EuroSAT RGB dataset through the Hugging Face `datasets` library. For the current experiments, a shuffled sample of 500 images is used. The dataset covers 10 land-use and land-cover categories.
+- **Dataset:** EuroSAT RGB
+- **Source:** Hugging Face `blanchon/EuroSAT_RGB`
+- **Image size:** 64 × 64 pixels
+- **Number of land-use categories:** 10
+- **Training sample used for the final model:** 10,000 images
+- **Sampling seed:** 42
+
+The dataset labels are used for evaluation, not as training targets for the clustering algorithm.
 
 ## Technologies Used
 
-- Python, NumPy, and Pandas
+- Python 3.11
+- NumPy and Pandas
 - Matplotlib
 - Scikit-learn
-- Hugging Face Datasets
 - PyTorch and TorchVision
-- Pretrained ResNet18 image features
+- Hugging Face Datasets
+- Streamlit
+- Joblib
 - Git and GitHub
 
-## Experiments and Results
+## Feature Extraction and Clustering
 
-The following recorded experiments use 500 images and K-Means with 10 clusters.
+A pretrained ResNet18 model is used as a feature extractor. Its final classification layer is replaced with an identity layer, producing a 512-dimensional feature vector for each image.
 
-| Feature representation | Features per image | Silhouette Score | ARI |
-|---|---:|---:|---:|
-| PCA + K-Means | 50 | 0.1699 | 0.1221 |
-| Mean RGB + RGB standard deviation | 6 | 0.3414 | 0.1672 |
-| Scaled colour features | 6 | 0.3310 | 0.1861 |
-| RGB histograms | 24 | 0.3198 | 0.1138 |
-| Pretrained ResNet18 | 512 | 0.0645 | 0.4293 |
+The extracted features are standardized using `StandardScaler` and passed to K-Means.
 
-Among these experiments, ResNet18 features achieved the highest ARI (0.4293), while the six-feature mean-and-standard-deviation colour representation achieved the highest Silhouette Score (0.3414). These metrics measure different properties: Silhouette Score measures cluster separation in feature space, while ARI measures agreement between clusters and the dataset's true labels. Results are preliminary and should not be interpreted as full-dataset performance.
+### Final Model Configuration
+
+| Parameter | Value |
+|---|---|
+| Feature extractor | Pretrained ResNet18 |
+| Feature dimensions | 512 |
+| Training images | 10,000 |
+| Clustering algorithm | K-Means |
+| Number of clusters (K) | 12 |
+| Random state | 42 |
+| Initializations (`n_init`) | 10 |
+
+## Final Model Results
+
+| Evaluation metric | Result |
+|---|---:|
+| Adjusted Rand Index (ARI) | 0.5349 |
+| Silhouette Score | 0.0408 |
+| Weighted cluster purity | 74.45% |
+
+**Interpretation:**
+
+- ARI measures agreement between the predicted clusters and the reference dataset labels.
+- Silhouette Score measures how well-separated the clusters are in feature space.
+- Weighted cluster purity describes the proportion of images belonging to the dominant reference class within their assigned clusters.
+
+The ARI indicates meaningful agreement with the reference labels. However, the relatively low Silhouette Score suggests that the clusters are not strongly separated. Cluster purity is an evaluation measure, not classification accuracy.
+
+## Model Comparison
+
+Using 10,000 images and K-Means with K = 12 as the selected configuration:
+
+| Algorithm | Silhouette Score | ARI |
+|---|---:|---:|
+| K-Means | 0.0408 | 0.5349 |
+| Agglomerative Clustering (Ward) | 0.0241 | 0.4855 |
+
+K-Means achieved a higher ARI and Silhouette Score in this comparison.
 
 ## K-Means Tuning
 
-The number of clusters was tested from K = 2 through K = 15 using scaled colour features.
+Different cluster counts were evaluated using CNN features.
 
-- Best Silhouette Score in the tested range: **0.4780 at K = 2**.
-- Best ARI in the tested range: **0.1927 at K = 15**.
+| Number of clusters | Silhouette Score | ARI |
+|---:|---:|---:|
+| 5 | 0.0574 | 0.3584 |
+| 8 | 0.0342 | 0.4632 |
+| 10 | 0.0399 | 0.4702 |
+| 12 | 0.0408 | 0.5349 |
+| 15 | 0.0444 | 0.5137 |
+| 20 | 0.0476 | 0.4647 |
 
-The metrics favour different cluster counts, so the choice of K depends on the goal of the experiment.
+K = 12 was selected because it achieved the highest ARI among the tested configurations. The best Silhouette Score occurred at K = 5, demonstrating that the two evaluation metrics favour different cluster counts.
 
-## Project Structure
+## Stability Evaluation
 
-```text
-satellite-land-clustering/
-├── src/
-│   ├── load_dataset.py
-│   ├── explore_dataset.py
-│   ├── prepare_data.py
-│   ├── kmeans_model.py
-│   ├── colour_features.py
-│   ├── colour_features_scale.py
-│   ├── colour_histogram.py
-│   ├── kmeans_tuning.py
-│   ├── cnn_features.py
-│   ├── compare_models.py
-│   ├── experiment_logger.py
-│   └── test_logger.py
-├── results/
-│   ├── kmeans_tuning.png
-│   ├── model_comparison.csv
-│   ├── model_comparison.png
-│   └── experiment_results.csv
-├── requirement.txt
-└── README.md
-```
+The selected model was evaluated across different sampling seeds and K-Means initialization seeds.
 
-This tree reflects the project files discussed during development. If you later add, remove, or rename a file, update this section to match the actual folder contents.
+- Sampling robustness: mean ARI of approximately 0.5343.
+- Initialization stability: mean ARI of approximately 0.5350.
 
-## Setup and Installation
+These results indicate that the measured ARI remained relatively consistent across the tested seeds.
 
-### 1. Clone the repository
+## Batch Prediction
 
-```bash
-git clone https://github.com/Aditya-kumar-singh-ai/satellite-land-clustering.git
-cd satellite-land-clustering
-```
+The project supports predictions on new satellite images without retraining the clustering model.
 
-### 2. Create and activate a virtual environment (Windows PowerShell)
+Supported inputs:
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-```
-
-### 3. Install dependencies
-
-```powershell
-python -m pip install -r requirement.txt
-```
-
-The dependency file should include the libraries required by the scripts you plan to run. The dataset-loading scripts need `datasets`; the CNN experiment needs `torch` and `torchvision`.
-
-## Run the Experiments
-
-Run commands from the repository root in an activated environment:
-
-```powershell
-python src/kmeans_model.py
-python src/colour_features.py
-python src/colour_features_scale.py
-python src/colour_histogram.py
-python src/kmeans_tuning.py
-python src/cnn_features.py
-python src/compare_models.py
-```
-
-The first CNN run may download pretrained model weights. Dataset and model downloads require internet access.
-
-## Evaluation Metrics
-
-- **Silhouette Score:** Measures how well-separated clusters are in feature space; higher is generally better.
-- **Adjusted Rand Index (ARI):** Measures agreement between clusters and actual labels, adjusted for chance; higher is generally better.
-
-ARI is used only for evaluation. K-Means does not use the true land-use labels to form clusters.
-
-## Limitations
-
-- Experiments use a 500-image sample rather than the full dataset.
-- Results may vary with the sample, feature scaling, preprocessing, and clustering parameters.
-- ResNet18 was pretrained on a general image dataset, not specifically optimized for EuroSAT.
-- Colour features and independent RGB histograms lose some spatial information.
-- The clustering results are exploratory and are not a replacement for a validated land-cover classification system.
-
-## Future Improvements
-
-- Evaluate promising approaches on larger samples and the full dataset.
-- Test alternative pretrained feature extractors.
-- Investigate dimensionality reduction on CNN embeddings.
-- Improve cluster visualizations and reproducible experiment summaries.
-
-## Author
-
-**Aditya Kumar Singh**
-
-GitHub: https://github.com/Aditya-kumar-singh-ai
-
-LinkedIn: https://www.linkedin.com/in/aditya-kumar-b19019338/

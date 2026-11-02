@@ -3,7 +3,6 @@ from pathlib import Path
 import time
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 
 from sklearn.cluster import KMeans
@@ -18,8 +17,11 @@ from feature_cache import load_or_extract_features
 # ============================================================
 
 SEED = 42
-SAMPLE_SIZE = 500
+SAMPLE_SIZE = 10000
+
 K_VALUES = [5, 8, 10, 12, 15, 20]
+
+SILHOUETTE_SAMPLE_SIZE = 500
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 RESULTS_DIR = ROOT_DIR / "results"
@@ -52,6 +54,11 @@ if len(X) != SAMPLE_SIZE:
 if len(X) != len(y_true):
     raise ValueError("Feature and label counts do not match.")
 
+
+# ============================================================
+# 2. STANDARDIZE FEATURES
+# ============================================================
+
 print("\nStandardizing CNN features...")
 
 scaler = StandardScaler()
@@ -59,12 +66,13 @@ X_scaled = scaler.fit_transform(X)
 
 
 # ============================================================
-# 2. EVALUATE DIFFERENT VALUES OF K
+# 3. EVALUATE DIFFERENT VALUES OF K
 # ============================================================
 
 results = []
 
 for k in K_VALUES:
+
     print("\n" + "-" * 45)
     print(f"Testing K = {k}")
 
@@ -82,7 +90,9 @@ for k in K_VALUES:
 
     silhouette = silhouette_score(
         X_scaled,
-        cluster_ids
+        cluster_ids,
+        sample_size=SILHOUETTE_SAMPLE_SIZE,
+        random_state=SEED
     )
 
     ari = adjusted_rand_score(
@@ -90,7 +100,7 @@ for k in K_VALUES:
         cluster_ids
     )
 
-    clusters_found = len(np.unique(cluster_ids))
+    clusters_found = len(set(cluster_ids))
 
     results.append({
         "K": k,
@@ -107,24 +117,25 @@ for k in K_VALUES:
 
 
 # ============================================================
-# 3. SAVE RESULTS TO CSV
+# 4. SAVE RESULTS TO CSV
 # ============================================================
 
 results_df = pd.DataFrame(results)
 
-csv_path = RESULTS_DIR / "cnn_kmeans_tuning.csv"
+csv_path = RESULTS_DIR / "cnn_kmeans_tuning_10000.csv"
+
 results_df.to_csv(csv_path, index=False)
 
 print(f"\nResults saved to: {csv_path}")
 
 
 # ============================================================
-# 4. PLOT SILHOUETTE SCORE AND ARI
+# 5. PLOT SILHOUETTE SCORE AND ARI
 # ============================================================
 
 fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 
-# Silhouette Score plot
+# Silhouette Score
 axes[0].plot(
     results_df["K"],
     results_df["Silhouette Score"],
@@ -137,7 +148,7 @@ axes[0].set_ylabel("Silhouette Score")
 axes[0].set_xticks(K_VALUES)
 axes[0].grid(True, alpha=0.3)
 
-# Adjusted Rand Index plot
+# Adjusted Rand Index
 axes[1].plot(
     results_df["K"],
     results_df["ARI"],
@@ -152,7 +163,8 @@ axes[1].grid(True, alpha=0.3)
 
 plt.tight_layout()
 
-plot_path = RESULTS_DIR / "cnn_kmeans_tuning.png"
+plot_path = RESULTS_DIR / "cnn_kmeans_tuning_10000.png"
+
 plt.savefig(plot_path, dpi=200, bbox_inches="tight")
 plt.close()
 
@@ -160,7 +172,7 @@ print(f"Plot saved to: {plot_path}")
 
 
 # ============================================================
-# 5. REPORT THE BEST K FOR EACH METRIC
+# 6. REPORT BEST K
 # ============================================================
 
 best_silhouette = results_df.loc[
@@ -172,7 +184,7 @@ best_ari = results_df.loc[
 ]
 
 print("\n" + "=" * 60)
-print("K-MEANS TUNING RESULTS — RESNET18 FEATURES")
+print("K-MEANS TUNING RESULTS - RESNET18 FEATURES")
 print("=" * 60)
 
 print(results_df.round(4).to_string(index=False))

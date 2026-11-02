@@ -1,0 +1,13 @@
+{
+    "dataset": "EuroSAT RGB",
+    "training_images": 10000,
+    "sampling_seed": 42,
+    "feature_extractor": "ResNet18 pretrained",
+    "feature_dimensions": 512,
+    "clustering_algorithm": "KMeans",
+    "n_clusters": 12,
+    "model_seed": 42,
+    "n_init": 10,
+    "ari": 0.5349183895040266,
+    "silhouette_score": 0.04081005975604057
+}

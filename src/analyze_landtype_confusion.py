@@ -1,114 +1,212 @@
 
-import numpy as np
+from pathlib import Path
+
 import pandas as pd
-import torch
+import matplotlib.pyplot as plt
 
 from datasets import load_dataset
 from sklearn.cluster import KMeans
-from sklearn.metrics import adjusted_rand_score
 from sklearn.preprocessing import StandardScaler
-from torchvision.models import resnet18, ResNet18_Weights
 
-SAMPLE_SIZE = 500
+from feature_cache import load_or_extract_features
+
+
+# ============================================================
+# CONFIGURATION
+# ============================================================
+
+SAMPLE_SIZE = 10000
 SEED = 42
-K = 15
-BATCH_SIZE = 32
+K = 12
 
-LABEL_NAMES = [
-    "Annual Crop",
-    "Forest",
-    "Herbaceous Vegetation",
-    "Highway",
-    "Industrial Buildings",
-    "Pasture",
-    "Permanent Crop",
-    "Residential Buildings",
-    "River",
-    "SeaLake",
-]
+ROOT_DIR = Path(__file__).resolve().parent.parent
+RESULTS_DIR = ROOT_DIR / "results"
+RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
-device = torch.device("cpu")
 
-print("Loading EuroSAT RGB dataset...")
+# ============================================================
+# 1. LOAD FEATURES AND LABELS
+# ============================================================
+
+print("=" * 60)
+print("LAND-TYPE CONFUSION ANALYSIS")
+print("=" * 60)
+
+print("\nLoading cached CNN features...")
+
+X, actual_labels = load_or_extract_features(
+    sample_size=SAMPLE_SIZE,
+    seed=SEED
+)
+
+if len(X) != SAMPLE_SIZE:
+    raise ValueError("Unexpected feature count.")
+
+if len(X) != len(actual_labels):
+    raise ValueError("Feature and label counts do not match.")
+
 dataset = load_dataset("blanchon/EuroSAT_RGB", split="train")
-sample = dataset.shuffle(seed=SEED).select(range(SAMPLE_SIZE))
+label_names = dataset.features["label"].names
 
-weights = ResNet18_Weights.DEFAULT
-model = resnet18(weights=weights)
-model.fc = torch.nn.Identity()
-model.eval().to(device)
+print("Feature shape:", X.shape)
+print("Images:", len(actual_labels))
 
-transform = weights.transforms()
 
-images = []
-actual_labels = []
+# ============================================================
+# 2. STANDARDIZE AND CLUSTER
+# ============================================================
 
-for item in sample:
-    images.append(transform(item["image"].convert("RGB")))
-    actual_labels.append(item["label"])
+print("\nStandardizing features...")
 
-images = torch.stack(images)
-actual_labels = np.asarray(actual_labels)
-
-features = []
-
-print("Extracting CNN features...")
-with torch.no_grad():
-    for start in range(0, len(images), BATCH_SIZE):
-        batch = images[start:start + BATCH_SIZE].to(device)
-        features.append(model(batch).cpu().numpy())
-        print(f"Processed {min(start + BATCH_SIZE, len(images))}/{len(images)}")
-
-features = np.vstack(features)
-features = StandardScaler().fit_transform(features)
+X_scaled = StandardScaler().fit_transform(X)
 
 print(f"Running K-Means with K={K}...")
-predicted_clusters = KMeans(
+
+kmeans = KMeans(
     n_clusters=K,
-    random_state=42,
+    random_state=SEED,
     n_init=10
-).fit_predict(features)
+)
 
-print("ARI:", round(adjusted_rand_score(actual_labels, predicted_clusters), 4))
+predicted_clusters = kmeans.fit_predict(X_scaled)
 
-# Count actual land types in every cluster.
+print("Clustering completed.")
+
+
+# ============================================================
+# 3. CREATE LAND-TYPE VS CLUSTER TABLE
+# ============================================================
+
 df = pd.DataFrame({
-    "Actual Land Type": [LABEL_NAMES[i] for i in actual_labels],
+    "Actual Land Type": [
+        label_names[int(label)] for label in actual_labels
+    ],
     "Cluster": predicted_clusters
 })
 
 counts = pd.crosstab(
     df["Actual Land Type"],
     df["Cluster"]
-).reindex(LABEL_NAMES, fill_value=0)
+).reindex(label_names, fill_value=0)
 
-counts.to_csv("results/cnn_landtype_confusion_counts.csv")
+print("\nLand-type distribution across clusters:")
+print(counts.to_string())
 
-# Normalize each land-type row to percentages.
-percentages = counts.div(counts.sum(axis=1), axis=0) * 100
-percentages.to_csv("results/cnn_landtype_confusion_percentages.csv")
 
-# Find the most common cluster for each actual land type.
+# ============================================================
+# 4. NORMALIZE EACH LAND TYPE
+# ============================================================
+
+percentages = counts.div(
+    counts.sum(axis=1),
+    axis=0
+) * 100
+
+print("\nLand-type distribution percentages:")
+print(percentages.round(2).to_string())
+
+
+# ============================================================
+# 5. CREATE SUMMARY
+# ============================================================
+
 summary = pd.DataFrame({
     "Actual Land Type": counts.index,
     "Images": counts.sum(axis=1).values,
     "Most Common Cluster": counts.idxmax(axis=1).values,
-    "Images in Most Common Cluster": counts.max(axis=1).values,
+    "Images in Most Common Cluster": counts.max(axis=1).values
 })
 
 summary["Percentage in Most Common Cluster"] = (
-    summary["Images in Most Common Cluster"] / summary["Images"] * 100
+    summary["Images in Most Common Cluster"]
+    / summary["Images"] * 100
 ).round(2)
 
-summary.to_csv("results/cnn_landtype_confusion_summary.csv", index=False)
-
-print("\nLand-type distribution across clusters (counts):")
-print(counts.to_string())
-
-print("\nLand-type summary:")
+print("\nLand-type confusion summary:")
 print(summary.to_string(index=False))
 
-print("\nSaved:")
-print("results/cnn_landtype_confusion_counts.csv")
-print("results/cnn_landtype_confusion_percentages.csv")
-print("results/cnn_landtype_confusion_summary.csv")
+
+# ============================================================
+# 6. SAVE RESULTS
+# ============================================================
+
+counts_path = (
+    RESULTS_DIR / "cnn_landtype_confusion_counts_10000_k12.csv"
+)
+
+percentages_path = (
+    RESULTS_DIR / "cnn_landtype_confusion_percentages_10000_k12.csv"
+)
+
+summary_path = (
+    RESULTS_DIR / "cnn_landtype_confusion_summary_10000_k12.csv"
+)
+
+counts.to_csv(counts_path)
+percentages.to_csv(percentages_path)
+summary.to_csv(summary_path)
+
+
+# ============================================================
+# 7. GENERATE HEATMAP
+# ============================================================
+
+fig, ax = plt.subplots(figsize=(13, 7))
+
+image = ax.imshow(
+    percentages.values,
+    aspect="auto",
+    interpolation="nearest",
+    vmin=0,
+    vmax=100
+)
+
+fig.colorbar(image, ax=ax, label="Percentage")
+
+ax.set_xticks(range(len(percentages.columns)))
+ax.set_xticklabels(percentages.columns)
+
+ax.set_yticks(range(len(percentages.index)))
+ax.set_yticklabels(percentages.index)
+
+ax.set_xlabel("Predicted Cluster")
+ax.set_ylabel("Actual Land Type")
+
+ax.set_title(
+    "Land-Type Distribution Across Clusters "
+    "(10,000 Images, K=12)"
+)
+
+plt.tight_layout()
+
+heatmap_path = (
+    RESULTS_DIR / "cnn_landtype_confusion_heatmap_10000_k12.png"
+)
+
+plt.savefig(
+    heatmap_path,
+    dpi=200,
+    bbox_inches="tight"
+)
+
+plt.close()
+
+
+# ============================================================
+# 8. FINAL REPORT
+# ============================================================
+
+print("\n" + "=" * 60)
+print("LAND-TYPE CONFUSION ANALYSIS COMPLETED")
+print("=" * 60)
+
+print(f"Images: {SAMPLE_SIZE}")
+print(f"Clusters: {K}")
+
+print("\nSaved files:")
+print(counts_path)
+print(percentages_path)
+print(summary_path)
+print(heatmap_path)
+
+print("\nExperiment completed successfully!")

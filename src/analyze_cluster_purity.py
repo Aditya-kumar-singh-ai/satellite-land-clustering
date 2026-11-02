@@ -2,73 +2,84 @@
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
-import seaborn as sns
-import torch
-import torchvision.models as models
 
 from datasets import load_dataset
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import adjusted_rand_score
-from torchvision.models import ResNet18_Weights
+
+from feature_cache import load_or_extract_features
 
 
-# Configuration
+# ============================================================
+# CONFIGURATION
+# ============================================================
+
+SEED = 42
+SAMPLE_SIZE = 10000
+N_CLUSTERS = 12
+
 ROOT_DIR = Path(__file__).resolve().parent.parent
 RESULTS_DIR = ROOT_DIR / "results"
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
-SEED = 42
-SAMPLE_SIZE = 500
-N_CLUSTERS = 10
 
-# Load dataset and reproduce the same sample
-print("Loading EuroSAT RGB dataset...")
+# ============================================================
+# 1. LOAD CACHED FEATURES AND LABELS
+# ============================================================
+
+print("=" * 60)
+print("CNN CLUSTER PURITY ANALYSIS")
+print("=" * 60)
+
+print("\nLoading cached CNN features...")
+
+X, y_true = load_or_extract_features(
+    sample_size=SAMPLE_SIZE,
+    seed=SEED
+)
+
+print("Feature shape:", X.shape)
+print("Images:", len(y_true))
+
+if len(X) != SAMPLE_SIZE:
+    raise ValueError("Unexpected feature count.")
+
+if len(X) != len(y_true):
+    raise ValueError("Feature and label counts do not match.")
+
+
+# Get actual land-type names from dataset metadata.
 dataset = load_dataset("blanchon/EuroSAT_RGB", split="train")
-images = dataset.shuffle(seed=SEED).select(range(SAMPLE_SIZE))
+label_names = dataset.features["label"].names
 
-y_true = np.asarray(images["label"])
-label_names = images.features["label"].names
 
-# Extract pretrained ResNet18 features
-print("Loading ResNet18...")
-weights = ResNet18_Weights.DEFAULT
-model = models.resnet18(weights=weights)
-model.fc = torch.nn.Identity()
-model.eval()
+# ============================================================
+# 2. STANDARDIZE AND CLUSTER
+# ============================================================
 
-preprocess = weights.transforms()
-features = []
+print("\nStandardizing features...")
 
-print("Extracting CNN features...")
-with torch.inference_mode():
-    for i, sample in enumerate(images):
-        image = sample["image"].convert("RGB")
-        tensor = preprocess(image).unsqueeze(0)
-        embedding = model(tensor)
-        features.append(embedding.squeeze(0).numpy())
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
 
-        if (i + 1) % 100 == 0:
-            print(f"Processed {i + 1}/{SAMPLE_SIZE}")
+print(f"Running K-Means with K={N_CLUSTERS}...")
 
-X = np.asarray(features, dtype=np.float32)
-X_scaled = StandardScaler().fit_transform(X)
-
-# Cluster
-print("Running K-Means...")
-model_kmeans = KMeans(
+kmeans = KMeans(
     n_clusters=N_CLUSTERS,
     random_state=SEED,
     n_init=10
 )
-cluster_ids = model_kmeans.fit_predict(X_scaled)
 
-ari = adjusted_rand_score(y_true, cluster_ids)
-print(f"ARI: {ari:.4f}")
+cluster_ids = kmeans.fit_predict(X_scaled)
 
-# Cluster versus actual land type
+print("Clustering completed.")
+
+
+# ============================================================
+# 3. CLUSTER VS ACTUAL LAND TYPE
+# ============================================================
+
 table = pd.crosstab(
     pd.Series(cluster_ids, name="Cluster"),
     pd.Series(
@@ -77,37 +88,19 @@ table = pd.crosstab(
     )
 )
 
-# Save raw counts
-counts_path = RESULTS_DIR / "cnn_cluster_landtype_counts.csv"
-table.to_csv(counts_path)
+print("\nCluster counts:")
+print(table)
 
-# Calculate percentage composition of each cluster
-row_percentages = table.div(table.sum(axis=1), axis=0) * 100
 
-percent_path = RESULTS_DIR / "cnn_cluster_landtype_percentages.csv"
-row_percentages.to_csv(percent_path)
+# ============================================================
+# 4. CALCULATE CLUSTER PURITY
+# ============================================================
 
-# Draw heatmap
-plt.figure(figsize=(14, 8))
-sns.heatmap(
-    row_percentages,
-    annot=True,
-    fmt=".0f",
-    cmap="YlGnBu",
-    vmin=0,
-    vmax=100
-)
-plt.title("ResNet18 + K-Means: Land-Type Composition of Each Cluster")
-plt.xlabel("Actual Land Type")
-plt.ylabel("Predicted Cluster")
-plt.xticks(rotation=45, ha="right")
-plt.tight_layout()
+row_percentages = table.div(
+    table.sum(axis=1),
+    axis=0
+) * 100
 
-heatmap_path = RESULTS_DIR / "cnn_cluster_purity_heatmap.png"
-plt.savefig(heatmap_path, dpi=200)
-plt.close()
-
-# Summarize the dominant class and purity for each cluster
 summary = pd.DataFrame({
     "Cluster": row_percentages.index,
     "Images": table.sum(axis=1).values,
@@ -115,15 +108,108 @@ summary = pd.DataFrame({
     "Dominant Type Percentage": row_percentages.max(axis=1).values
 })
 
-summary_path = RESULTS_DIR / "cnn_cluster_purity_summary.csv"
-summary.to_csv(summary_path, index=False)
+# Overall weighted cluster purity.
+overall_purity = (
+    table.max(axis=1).sum() / table.values.sum()
+) * 100
 
-print("\nCluster composition summary:")
+print("\nCluster purity summary:")
 print(summary.round(2).to_string(index=False))
 
-print("\nSaved:")
+print(
+    f"\nOverall weighted cluster purity: "
+    f"{overall_purity:.2f}%"
+)
+
+
+# ============================================================
+# 5. SAVE RESULTS TO CSV
+# ============================================================
+
+counts_path = (
+    RESULTS_DIR / "cnn_cluster_landtype_counts_10000_k12.csv"
+)
+
+percent_path = (
+    RESULTS_DIR / "cnn_cluster_landtype_percentages_10000_k12.csv"
+)
+
+summary_path = (
+    RESULTS_DIR / "cnn_cluster_purity_summary_10000_k12.csv"
+)
+
+table.to_csv(counts_path)
+row_percentages.to_csv(percent_path)
+summary.to_csv(summary_path)
+
+
+# ============================================================
+# 6. GENERATE HEATMAP
+# ============================================================
+
+plt.figure(figsize=(15, 8))
+
+plt.imshow(
+    row_percentages.values,
+    aspect="auto",
+    interpolation="nearest",
+    vmin=0,
+    vmax=100
+)
+
+plt.colorbar(label="Percentage")
+
+plt.xticks(
+    range(len(row_percentages.columns)),
+    row_percentages.columns,
+    rotation=45,
+    ha="right"
+)
+
+plt.yticks(
+    range(len(row_percentages.index)),
+    row_percentages.index
+)
+
+plt.title(
+    "ResNet18 + K-Means: Cluster Composition "
+    "(10,000 Images, K=12)"
+)
+
+plt.xlabel("Actual Land Type")
+plt.ylabel("Cluster")
+
+plt.tight_layout()
+
+heatmap_path = (
+    RESULTS_DIR / "cnn_cluster_purity_heatmap_10000_k12.png"
+)
+
+plt.savefig(
+    heatmap_path,
+    dpi=200,
+    bbox_inches="tight"
+)
+
+plt.close()
+
+
+# ============================================================
+# 7. FINAL REPORT
+# ============================================================
+
+print("\n" + "=" * 60)
+print("CLUSTER PURITY ANALYSIS COMPLETED")
+print("=" * 60)
+
+print(f"Images: {SAMPLE_SIZE}")
+print(f"Clusters: {N_CLUSTERS}")
+print(f"Overall weighted purity: {overall_purity:.2f}%")
+
+print("\nSaved files:")
 print(counts_path)
 print(percent_path)
-print(heatmap_path)
 print(summary_path)
-print("\nCluster analysis completed!")
+print(heatmap_path)
+
+print("\nExperiment completed successfully!")

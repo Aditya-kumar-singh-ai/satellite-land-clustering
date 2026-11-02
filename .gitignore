@@ -5,3 +5,18 @@ __pycache__/
 .ipynb_checkpoints/
 .env
 *.pyc
+
+# Dataset and feature caches
+data/
+
+# Temporary inference test files
+test_images/
+test_images.zip
+
+# Dashboard backups
+dashboard/app_backup.py
+dashboard/app copy.py
+
+# Temporary results
+results/batch_predictions.csv
+results/experiment_results_backup.csv

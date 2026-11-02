@@ -2,124 +2,160 @@
 from pathlib import Path
 import time
 
-import numpy as np
 import pandas as pd
-import torch
-import torchvision.models as models
 
-from datasets import load_dataset
 from sklearn.cluster import KMeans
 from sklearn.metrics import adjusted_rand_score, silhouette_score
 from sklearn.preprocessing import StandardScaler
-from torchvision.models import ResNet18_Weights
+
+from feature_cache import load_or_extract_features
 
 
-# Configuration
-SAMPLE_SIZE = 500
-N_CLUSTERS = 15
-SAMPLE_SEEDS = [21, 42, 63, 84, 105]
+# ============================================================
+# CONFIGURATION
+# ============================================================
+
+SAMPLE_SIZE = 10000
+N_CLUSTERS = 12
+
+SAMPLE_SEED = 42
+
+MODEL_SEEDS = [21, 42, 63, 84, 105]
+
+SILHOUETTE_SAMPLE_SIZE = 500
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 RESULTS_DIR = ROOT_DIR / "results"
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
-# Load dataset once
-print("Loading EuroSAT RGB dataset...")
-dataset = load_dataset("blanchon/EuroSAT_RGB", split="train")
-label_names = dataset.features["label"].names
+# ============================================================
+# LOAD ONE FIXED DATASET
+# ============================================================
 
-# Load pretrained ResNet18 once
-print("Loading pretrained ResNet18...")
-weights = ResNet18_Weights.DEFAULT
-cnn_model = models.resnet18(weights=weights)
-cnn_model.fc = torch.nn.Identity()
-cnn_model.eval()
-preprocess = weights.transforms()
+print("=" * 60)
+print("K-MEANS INITIALIZATION STABILITY EXPERIMENT")
+print("=" * 60)
 
+print("\nLoading fixed 10,000-image dataset...")
 
-def extract_features(images):
-    features = []
+X, y_true = load_or_extract_features(
+    sample_size=SAMPLE_SIZE,
+    seed=SAMPLE_SEED
+)
 
-    with torch.inference_mode():
-        for i, sample in enumerate(images):
-            image = sample["image"].convert("RGB")
-            tensor = preprocess(image).unsqueeze(0)
-            embedding = cnn_model(tensor)
-            features.append(embedding.squeeze(0).numpy())
+print("Feature shape:", X.shape)
+print("Number of images:", len(y_true))
 
-            if (i + 1) % 100 == 0:
-                print(f"  Extracted {i + 1}/{len(images)} images")
+# Standardize once so every run uses identical input features
+print("\nStandardizing features...")
 
-    return np.asarray(features, dtype=np.float32)
+X_scaled = StandardScaler().fit_transform(X)
 
 
-# Run each sample independently
+# ============================================================
+# RUN K-MEANS WITH DIFFERENT INITIALIZATION SEEDS
+# ============================================================
+
 all_results = []
 
-for seed in SAMPLE_SEEDS:
-    print(f"\n{'=' * 50}")
-    print(f"Sample seed: {seed}")
-    print("=" * 50)
+for model_seed in MODEL_SEEDS:
 
-    images = dataset.shuffle(seed=seed).select(range(SAMPLE_SIZE))
-    y_true = np.asarray(images["label"])
-
-    print("Extracting CNN features...")
-    X = extract_features(images)
-
-    X_scaled = StandardScaler().fit_transform(X)
-
-    print(f"Running K-Means with K={N_CLUSTERS}...")
-    start = time.perf_counter()
+    print("\n" + "=" * 60)
+    print(f"K-Means random state: {model_seed}")
+    print("=" * 60)
 
     kmeans = KMeans(
         n_clusters=N_CLUSTERS,
-        random_state=42,
+        random_state=model_seed,
         n_init=10
     )
+
+    start = time.perf_counter()
+
     cluster_ids = kmeans.fit_predict(X_scaled)
 
-    clustering_seconds = time.perf_counter() - start
+    elapsed = time.perf_counter() - start
 
-    silhouette = silhouette_score(X_scaled, cluster_ids)
-    ari = adjusted_rand_score(y_true, cluster_ids)
+    # Silhouette score estimated using 500 points
+    silhouette = silhouette_score(
+        X_scaled,
+        cluster_ids,
+        sample_size=SILHOUETTE_SAMPLE_SIZE,
+        random_state=42
+    )
+
+    # ARI against actual land-type labels
+    ari = adjusted_rand_score(
+        y_true,
+        cluster_ids
+    )
 
     all_results.append({
-        "Sample Seed": seed,
-        "Images": len(images),
+        "Model Seed": model_seed,
+        "Images": len(y_true),
         "K": N_CLUSTERS,
         "Silhouette Score": silhouette,
         "ARI": ari,
-        "Clustering Seconds": clustering_seconds
+        "Clustering Seconds": elapsed
     })
 
     print(f"Silhouette Score: {silhouette:.4f}")
     print(f"ARI: {ari:.4f}")
-    print(f"Clustering time: {clustering_seconds:.3f} seconds")
+    print(f"Clustering time: {elapsed:.3f} seconds")
 
 
-# Save individual results
+# ============================================================
+# SAVE INDIVIDUAL RESULTS
+# ============================================================
+
 results_df = pd.DataFrame(all_results)
-csv_path = RESULTS_DIR / "cnn_clustering_stability.csv"
+
+csv_path = (
+    RESULTS_DIR / "cnn_initialization_stability_10000_k12.csv"
+)
+
 results_df.to_csv(csv_path, index=False)
 
-# Calculate summary statistics
-metrics = ["Silhouette Score", "ARI", "Clustering Seconds"]
+
+# ============================================================
+# CALCULATE SUMMARY STATISTICS
+# ============================================================
+
+metrics = [
+    "Silhouette Score",
+    "ARI",
+    "Clustering Seconds"
+]
+
 summary = results_df[metrics].agg(["mean", "std"]).T
+
 summary.columns = ["Mean", "Standard Deviation"]
 
-summary_path = RESULTS_DIR / "cnn_clustering_stability_summary.csv"
+summary_path = (
+    RESULTS_DIR /
+    "cnn_initialization_stability_summary_10000_k12.csv"
+)
+
 summary.to_csv(summary_path)
 
+
+# ============================================================
+# FINAL REPORT
+# ============================================================
+
 print("\n" + "=" * 60)
-print("STABILITY RESULTS")
+print("INITIALIZATION STABILITY RESULTS")
 print("=" * 60)
+
+print("\nIndividual results:")
 print(results_df.round(4).to_string(index=False))
 
-print("\nMean and standard deviation across five samples:")
+print("\nMean and standard deviation:")
 print(summary.round(4).to_string())
 
-print(f"\nIndividual results saved to: {csv_path}")
-print(f"Summary saved to: {summary_path}")
-print("\nStability experiment completed!")
+print("\nSaved files:")
+print(csv_path)
+print(summary_path)
+
+print("\nInitialization stability experiment completed!")
