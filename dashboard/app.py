@@ -270,14 +270,90 @@ if page == "Overview":
     )
 
 elif page == "Feature Comparison":
-    st.title("📊 Feature Representation")
+    st.title("📊 Feature Representation Comparison")
     st.write(
-        "The final model uses 512-dimensional ResNet18 embeddings. "
-        "Earlier colour and histogram experiments are shown only when their result files are present."
+        "Compare colour statistics, RGB histograms, and pretrained ResNet18 "
+        "embeddings for satellite image clustering."
     )
-    st.info(
-        "The original dashboard's feature-comparison CSV is not part of the latest result-file set "
-        "listed for this project. Add it to results/ if you want that historical comparison displayed."
+
+    feature_df = load_csv("feature_representation_comparison.csv")
+
+    # Use the recorded historical experiment results if the CSV is absent.
+    if feature_df.empty:
+        feature_df = pd.DataFrame({
+            "Feature Representation": [
+                "RGB Mean + Std",
+                "RGB Histogram",
+                "ResNet18 CNN",
+            ],
+            "Feature Count": [6, 24, 512],
+            "Images": [500, 500, 500],
+            "Clusters": [10, 10, 10],
+            "Silhouette Score": [0.3309496641, 0.2701827288, 0.0644616112],
+            "ARI": [0.1861337451, 0.1161421225, 0.4293159518],
+            "Feature Extraction Seconds": [
+                0.4219018,
+                0.5722620,
+                15.9277325,
+            ],
+            "Clustering Seconds": [
+                0.1316515,
+                0.0613199,
+                0.2161330,
+            ],
+        })
+        st.info(
+            "Showing the recorded 500-image experiment results because "
+            "results/feature_representation_comparison.csv was not found."
+        )
+
+    st.subheader("Experiment Results")
+    st.dataframe(feature_df, hide_index=True, use_container_width=True)
+
+    st.divider()
+    show_metric_chart(
+        feature_df,
+        "Feature Representation",
+        "Silhouette Score",
+        "Silhouette Score Comparison",
+    )
+    show_metric_chart(
+        feature_df,
+        "Feature Representation",
+        "ARI",
+        "Adjusted Rand Index (ARI) Comparison",
+    )
+    show_metric_chart(
+        feature_df,
+        "Feature Representation",
+        "Feature Extraction Seconds",
+        "Feature Extraction Time (seconds)",
+    )
+    show_metric_chart(
+        feature_df,
+        "Feature Representation",
+        "Feature Count",
+        "Number of Features",
+    )
+
+    st.divider()
+    st.subheader("Key Finding")
+    st.markdown(
+        """
+        - **RGB Mean + Std:** 6 features; ARI 0.1861.
+        - **RGB Histogram:** 24 features; ARI 0.1161.
+        - **ResNet18 CNN:** 512 features; ARI 0.4293.
+        """
+    )
+    st.success(
+        "ResNet18 embeddings achieved the highest ARI among these historical "
+        "feature representation experiments."
+    )
+    st.caption(
+        "These experiments used 500 images and 10 clusters. The final deployed "
+        "model uses 10,000 images, 512-dimensional ResNet18 embeddings, and "
+        "12 clusters. These historical results are not directly comparable "
+        "to the final model's evaluation metrics."
     )
 
 elif page == "Algorithm Comparison":
