@@ -1,0 +1,4 @@
+Method,Original Features,Reduced Features,Explained Variance (%),Execution Time (seconds)
+PCA,512,260,95.007080078125,1.5335491000441834
+PCA 2D,512,2,23.364633560180664,
+t-SNE,512,2,,16.625435000052676
