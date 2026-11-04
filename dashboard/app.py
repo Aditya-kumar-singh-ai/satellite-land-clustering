@@ -226,6 +226,7 @@ pages = [
     "K-Means Tuning",
     "Cluster Explorer",
     "Evaluation & Insights",
+    "Dimensionality Reduction",
     "Batch Prediction",
     "About Project",
 ]
@@ -429,7 +430,97 @@ elif page == "Evaluation & Insights":
     show_image("Cluster Purity Heatmap", "cnn_cluster_purity_heatmap_10000_k12.png")
     show_image("Land-Type Confusion Heatmap", "cnn_landtype_confusion_heatmap_10000_k12.png")
 
+
+elif page == "Dimensionality Reduction":
+    st.title("📉 Dimensionality Reduction")
+    st.write(
+        "Explore PCA and t-SNE visualizations of ResNet18 satellite image "
+        "features and compare clustering results after PCA."
+    )
+
+    st.subheader("PCA Results")
+
+    pca_df = load_csv("pca_explained_variance.csv")
+    show_table(pca_df, "PCA Explained Variance")
+
+    show_image(
+        "PCA 2D Visualization",
+        "pca_2d_visualization.png",
+        "Projection of satellite image features into two principal components."
+    )
+
+    show_image(
+        "PCA Explained Variance",
+        "pca_explained_variance.png",
+        "Variance retained by the principal components."
+    )
+
+    st.divider()
+    st.subheader("t-SNE Results")
+
+    show_image(
+        "t-SNE 2D Visualization",
+        "tsne_2d_visualization.png",
+        "Two-dimensional visualization of local similarity in CNN feature space."
+    )
+
+ 
+    st.divider()
+    st.subheader("PCA Clustering Comparison")
+
+    pca_comparison_df = load_csv("pca_clustering_comparison.csv")
+
+    show_table(
+        pca_comparison_df,
+        "Original CNN Features vs PCA Features"
+    )
+
+    if not pca_comparison_df.empty:
+        show_metric_chart(
+            pca_comparison_df,
+            "Experiment",
+            "ARI",
+            "Adjusted Rand Index Comparison"
+        )
+
+        show_metric_chart(
+            pca_comparison_df,
+            "Experiment",
+            "Silhouette Score",
+            "Silhouette Score Comparison"
+        )
+
+
+    st.divider()
+    st.subheader("PCA K-Means Tuning")
+
+    pca_tuning_df = load_csv("pca_kmeans_tuning.csv")
+    show_table(pca_tuning_df, "PCA K-Means Tuning Results")
+
+    show_image(
+        "Silhouette Score vs K",
+        "silhouette_vs_k.png",
+        "Silhouette scores for different numbers of clusters."
+    )
+
+    st.divider()
+    st.subheader("Cluster Interpretation")
+
+    composition_df = load_csv("cluster_composition.csv")
+    purity_df = load_csv("cluster_purity.csv")
+
+    show_table(composition_df, "Cluster Composition")
+    show_table(purity_df, "Cluster Purity")
+
+    show_image(
+        "Cluster Composition Heatmap",
+        "cluster_composition_heatmap.png",
+        "Distribution of reference land types across discovered clusters."
+    )
+
+
 elif page == "Batch Prediction":
+
     st.title("🛰️ Batch Satellite Image Prediction")
     st.write(
         "Upload one or more satellite images, or a ZIP archive containing images. "
