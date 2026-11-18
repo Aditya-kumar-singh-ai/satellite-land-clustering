@@ -20,3 +20,11 @@ dashboard/app copy.py
 # Temporary results
 results/batch_predictions.csv
 results/experiment_results_backup.csv
+
+
+
+# Python cache files
+**/__pycache__/
+
+# Temporary test archives
+test_images*.zip

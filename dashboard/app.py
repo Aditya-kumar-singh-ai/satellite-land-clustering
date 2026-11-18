@@ -2,21 +2,22 @@ from pathlib import Path
 from io import BytesIO
 import json
 import zipfile
+import requests
 
-import joblib
 import numpy as np
 import pandas as pd
 import streamlit as st
-import torch
 from PIL import Image, UnidentifiedImageError
-from torchvision.models import resnet18, ResNet18_Weights
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 RESULTS_DIR = ROOT_DIR / "results"
-MODELS_DIR = ROOT_DIR / "models"
+
 SUPPORTED_FORMATS = {".jpg", ".jpeg", ".png"}
-BATCH_SIZE = 32
-DEVICE = torch.device("cpu")
+
+
+
+# FastAPI backend
+API_URL = "http://127.0.0.1:8001/predict"
 
 st.set_page_config(
     page_title="Satellite Land-Type Clustering",
@@ -89,25 +90,6 @@ def show_image(title, filename, description=""):
         st.image(str(path), use_container_width=True)
 
 
-@st.cache_resource
-def load_inference_assets():
-    scaler_path = MODELS_DIR / "scaler.joblib"
-    kmeans_path = MODELS_DIR / "kmeans.joblib"
-    if not scaler_path.exists() or not kmeans_path.exists():
-        raise FileNotFoundError(
-            "Saved model files are missing. Expected models/scaler.joblib "
-            "and models/kmeans.joblib."
-        )
-
-    scaler = joblib.load(scaler_path)
-    kmeans = joblib.load(kmeans_path)
-
-    weights = ResNet18_Weights.DEFAULT
-    extractor = resnet18(weights=weights)
-    extractor.fc = torch.nn.Identity()
-    extractor.eval().to(DEVICE)
-    return scaler, kmeans, extractor, weights.transforms()
-
 
 def image_from_bytes(raw):
     image = Image.open(BytesIO(raw))
@@ -150,62 +132,79 @@ def collect_uploaded_images(uploaded_files):
     return items, failures
 
 
+
 def predict_uploaded_images(uploaded_files):
     items, failures = collect_uploaded_images(uploaded_files)
+
     if not items and not failures:
         raise ValueError("No supported images found in the uploaded files.")
 
-    scaler, kmeans, extractor, transform = load_inference_assets()
     records = []
     previews = []
 
     progress = st.progress(0, text="Preparing images...")
     total = len(items)
 
-    for start in range(0, total, BATCH_SIZE):
-        batch = items[start:start + BATCH_SIZE]
-        tensors = []
-        valid_names = []
-        valid_images = []
+    for index, (filename, raw) in enumerate(items, start=1):
+        try:
+            image = image_from_bytes(raw)
 
-        for filename, raw in batch:
-            try:
-                image = image_from_bytes(raw)
-                tensors.append(transform(image))
-                valid_names.append(filename)
-                valid_images.append(image.copy())
-            except (OSError, ValueError, UnidentifiedImageError) as exc:
-                records.append({
-                    "Filename": filename,
-                    "Cluster ID": None,
-                    "Status": f"Failed: {exc}",
-                })
+            extension = Path(filename).suffix.lower()
 
-        if tensors:
-            batch_tensor = torch.stack(tensors).to(DEVICE)
-            with torch.inference_mode():
-                embeddings = extractor(batch_tensor).cpu().numpy().astype(np.float32)
+            if extension in [".jpg", ".jpeg"]:
+                content_type = "image/jpeg"
+            elif extension == ".png":
+                content_type = "image/png"
+            else:
+                raise ValueError("Unsupported image format.")
 
-            scaled = scaler.transform(embeddings)
-            cluster_ids = kmeans.predict(scaled)
+            response = requests.post(
+                API_URL,
+                files={"file": (filename, raw, content_type)},
+                timeout=120
+            )
 
-            for filename, image, cluster_id in zip(valid_names, valid_images, cluster_ids):
-                records.append({
-                    "Filename": filename,
-                    "Cluster ID": int(cluster_id),
-                    "Status": "Success",
-                })
-                previews.append((filename, image, int(cluster_id)))
+            response.raise_for_status()
+            result = response.json()
+
+            cluster_id = int(result["cluster_id"])
+
+            records.append({
+                "Filename": filename,
+                "Cluster ID": cluster_id,
+                "Status": "Success",
+            })
+
+            previews.append((filename, image.copy(), cluster_id))
+
+        except requests.exceptions.RequestException as exc:
+            records.append({
+                "Filename": filename,
+                "Cluster ID": None,
+                "Status": f"API Error: {exc}",
+            })
+
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            records.append({
+                "Filename": filename,
+                "Cluster ID": None,
+                "Status": f"Failed: {exc}",
+            })
 
         progress.progress(
-            min(start + len(batch), total) / max(total, 1),
-            text=f"Processed {min(start + len(batch), total)} of {total} images",
+            index / max(total, 1),
+            text=f"Processed {index} of {total} images"
         )
 
     for filename, reason in failures:
-        records.append({"Filename": filename, "Cluster ID": None, "Status": f"Failed: {reason}"})
+        records.append({
+            "Filename": filename,
+            "Cluster ID": None,
+            "Status": f"Failed: {reason}",
+        })
 
     progress.empty()
+
     return pd.DataFrame(records), previews
 
 
@@ -524,7 +523,9 @@ elif page == "Batch Prediction":
     st.title("🛰️ Batch Satellite Image Prediction")
     st.write(
         "Upload one or more satellite images, or a ZIP archive containing images. "
-        "The dashboard uses the saved ResNet18 feature extractor, StandardScaler and K-Means model."
+        "The dashboard sends uploaded images to the FastAPI backend, "
+        "which extracts ResNet18 features and assigns clusters using "
+        "the trained StandardScaler and K-Means model."
     )
     st.warning(
         "Predictions are cluster assignments, not supervised land-type classifications. "
@@ -536,12 +537,15 @@ elif page == "Batch Prediction":
         accept_multiple_files=True,
         help="ZIP files are read in memory. Images larger than 20 MB inside a ZIP are skipped.",
     )
+    
     if uploaded_files and st.button("Run clustering", type="primary"):
         try:
-            with st.spinner("Loading model and predicting clusters..."):
+            with st.spinner("Sending images to FastAPI for prediction..."):
                 result_df, previews = predict_uploaded_images(uploaded_files)
+
             st.session_state["batch_result_df"] = result_df
             st.session_state["batch_previews"] = previews
+
         except Exception as exc:
             st.error(f"Prediction failed: {exc}")
 

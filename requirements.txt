@@ -6,3 +6,7 @@ pillow==12.3.0
 joblib==1.6.0
 torch==2.15.0
 torchvision==0.29.1
+fastapi
+uvicorn
+python-multipart
+requests
