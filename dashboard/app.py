@@ -1,8 +1,10 @@
+import os
 from pathlib import Path
 from io import BytesIO
 import json
 import zipfile
 import requests
+
 
 import numpy as np
 import pandas as pd
@@ -16,8 +18,12 @@ SUPPORTED_FORMATS = {".jpg", ".jpeg", ".png"}
 
 
 
-# FastAPI backend
-API_URL = "http://127.0.0.1:8001/predict"
+BACKEND_URL = os.getenv(
+    "BACKEND_URL",
+    "http://127.0.0.1:8001"
+)
+
+API_URL = f"{BACKEND_URL.rstrip('/')}/predict"
 
 st.set_page_config(
     page_title="Satellite Land-Type Clustering",
